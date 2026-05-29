@@ -38,9 +38,28 @@ npm run build    # 배포 빌드 검증
 - 필요한 컬럼(첫 시트): `date, channel, spend, impressions, clicks, app_installs, signups, exam_applications, exams_taken, passes, appointments, active_retained`
 - 업로드 데이터는 브라우저 메모리에만 존재(새로고침 시 더미로 복귀). 영구 저장이 필요하면 아래 "실데이터 연동" 참고.
 
-## 실데이터 / 실시간 연동 (다음 단계 옵션)
-- `lib/data.js` 의 `DEFAULT_DATA` 를 교체하거나, API Route(`app/api/...`)에서 구글시트/DB를 fetch 하도록 바꾸면 자동 갱신·실시간 가능.
-- 목표값은 `lib/data.js` 의 `TARGETS` 수정.
+## ★ 구글시트 연동 — URL 가진 모두에게 데이터 공유
+시트를 수정하면 **URL을 가진 모든 사람**에게 반영됩니다 (서버가 시트를 읽어옴, 약 5분마다 갱신).
+
+### 1) 구글시트 준비
+- 새 구글시트 → 첫 행(헤더)에 정확히 이 컬럼:
+  `date, channel, spend, impressions, clicks, app_installs, signups, exam_applications, exams_taken, passes, appointments, active_retained`
+- 엑셀 데이터는 이 시트에 붙여넣으면 됩니다.
+
+### 2) 시트를 CSV로 "웹에 게시"
+- 구글시트 → **파일 → 공유 → 웹에 게시(Publish to web)**
+- **게시 대상 = 해당 시트**, **형식 = 쉼표로 구분된 값(.csv)** 선택 → **게시**
+- 나오는 URL 복사 (형식: `https://docs.google.com/spreadsheets/d/e/.../pub?gid=0&single=true&output=csv`)
+
+### 3) Vercel 환경변수 등록
+- Vercel → 프로젝트 → **Settings → Environment Variables**
+- 이름 **`SHEET_CSV_URL`**, 값 = 위 CSV URL → 저장 → **Redeploy**
+
+→ 이제 시트를 고치면 약 5분 내 전체 대시보드에 반영됩니다.
+(환경변수 미설정 시엔 내장 더미 데이터로 동작. 상단 "엑셀/CSV 불러오기" 버튼은 *내 화면 임시 미리보기*용이며 남에게 공유되지 않음.)
+
+- 갱신 주기 조정: `app/api/data/route.js` 의 `revalidate = 300`(초) 수정.
+- 목표값(2,300·15만 등): `lib/data.js` 의 `TARGETS` 수정.
 
 ## 기술 스택
 Next.js 14 (App Router) · React 18 · ECharts 5 · SheetJS(xlsx). 다크 벤토 테마는 `app/globals.css`.

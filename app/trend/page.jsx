@@ -30,7 +30,7 @@ export default function TrendPage() {
     return {
       grid: { left: 42, right: 50, top: 34, bottom: 28 },
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, ...TIP },
-      legend: { data: ["시험신청 DB", "위촉", "DB CPA(만원)", "소진액(백만)"], top: 0, right: 0, itemWidth: 13, itemHeight: 8, textStyle: { fontSize: 11, color: "#9aa3b2" } },
+      legend: { data: ["시험신청 DB", "위촉", "DB CPA(만원)", "소진액(백만)"], top: 0, left: "center", itemWidth: 12, itemHeight: 8, itemGap: 12, textStyle: { fontSize: 10.5, color: "#9aa3b2" } },
       xAxis: { type: "category", data: days, axisLine: AXIS_LINE, axisTick: { show: false }, axisLabel: { ...LBL, interval: 1 } },
       yAxis: [
         { type: "value", name: "건수", min: 0, max: 100, splitLine: SPLIT, axisLabel: LBL, nameTextStyle: { color: "#7a8494", fontSize: 10 } },

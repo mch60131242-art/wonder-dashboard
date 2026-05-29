@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { DEFAULT_DATA, parseFile } from "@/lib/data";
 
 const Ctx = createContext(null);
@@ -24,6 +24,19 @@ export function DataProvider({ children }) {
       setSrc(`불러오기 실패: ${err.message}`);
       setOk(false);
     }
+  }, []);
+
+  // 마운트 시 구글시트(서버 API) 데이터 자동 로드 → URL 가진 모든 사람에게 공유 반영
+  useEffect(() => {
+    fetch("/api/data")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d && Array.isArray(d.channels) && d.channels.length) {
+          setData({ ...DEFAULT_DATA, channels: d.channels, daily: d.daily && d.daily.length ? d.daily : DEFAULT_DATA.daily });
+          if (d.source === "sheet") { setSrc("구글시트 연동 · 공유 데이터"); setOk(true); }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   return <Ctx.Provider value={{ data, src, ok, loadFile }}>{children}</Ctx.Provider>;
