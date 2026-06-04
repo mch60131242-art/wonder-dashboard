@@ -8,6 +8,16 @@ import { TIP, AXIS_LINE, SPLIT, LBL } from "@/lib/chart";
 const sum = (arr, k) => arr.reduce((a, d) => a + (d[k] || 0), 0);
 const ps = (arr) => arr.reduce((a, b) => a + (b || 0), 0);
 const pctOf = (a, b) => (b ? (a - b) / b * 100 : 0);
+// 최소제곱 추세선
+function linreg(ys) {
+  const n = ys.length;
+  if (!n) return [];
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  ys.forEach((y, x) => { sx += x; sy += y; sxy += x * y; sxx += x * x; });
+  const denom = n * sxx - sx * sx || 1;
+  const slope = (n * sxy - sx * sy) / denom, b = (sy - slope * sx) / n;
+  return ys.map((_, x) => +(slope * x + b).toFixed(2));
+}
 const SUBTABS = ["일간", "주간", "월간"];
 
 // 증감 칩 카드 (탭 공용)
@@ -62,12 +72,21 @@ export default function TrendPage() {
     };
   }, [daily, targets]);
 
-  const spendDaily = useMemo(() => ({
-    grid: { left: 38, right: 14, top: 16, bottom: 24 }, tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, ...TIP, valueFormatter: (v) => v + "백만" },
-    xAxis: { type: "category", data: days, axisLine: AXIS_LINE, axisTick: { show: false }, axisLabel: { ...LBL, interval: 1 } },
-    yAxis: { type: "value", min: 0, max: 15, splitLine: SPLIT, axisLabel: LBL },
-    series: [{ type: "bar", data: daily.map((d) => +(d.spend / 1e6).toFixed(1)), barWidth: "56%", itemStyle: { borderRadius: [4, 4, 0, 0], color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: "#c9a3ff" }, { offset: 1, color: "rgba(201,163,255,.4)" }] } } }],
-  }), [daily]);
+  const spendDaily = useMemo(() => {
+    const cur = daily.map((d) => +(d.spend / 1e6).toFixed(1));
+    const prev = PREV_DAILY_SPEND.slice(0, daily.length).map((v) => +(v / 1e6).toFixed(1));
+    return {
+      grid: { left: 38, right: 14, top: 30, bottom: 24 }, tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, ...TIP, valueFormatter: (v) => v + "백만" },
+      legend: { data: ["일별 광고비", "이번달 추세선", "지난달 추세선"], top: 0, right: 0, itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 10.5, color: "#9aa3b2" } },
+      xAxis: { type: "category", data: days, axisLine: AXIS_LINE, axisTick: { show: false }, axisLabel: { ...LBL, interval: 1 } },
+      yAxis: { type: "value", min: 0, max: 15, splitLine: SPLIT, axisLabel: LBL },
+      series: [
+        { name: "일별 광고비", type: "bar", data: cur, barWidth: "56%", itemStyle: { borderRadius: [4, 4, 0, 0], color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: "#c9a3ff" }, { offset: 1, color: "rgba(201,163,255,.4)" }] } } },
+        { name: "이번달 추세선", type: "line", data: linreg(cur), smooth: false, symbol: "none", lineStyle: { width: 2.6, color: "#7fd3ff" }, z: 5 },
+        { name: "지난달 추세선", type: "line", data: linreg(prev), smooth: false, symbol: "none", lineStyle: { width: 2, color: "#8a93a3", type: "dashed" }, z: 4 },
+      ],
+    };
+  }, [daily]);
 
   /* ── 주간 ── */
   const weekly = useMemo(() => {
@@ -94,14 +113,14 @@ export default function TrendPage() {
 
   const weekMixOpt = useMemo(() => ({
     grid: { left: 40, right: 44, top: 30, bottom: 24 }, tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, ...TIP },
-    legend: { data: ["소진액(백만)", "DB CPA(만원)"], top: 0, right: 0, itemWidth: 12, itemHeight: 8, textStyle: { fontSize: 10.5, color: "#9aa3b2" } },
+    legend: { data: ["광고비(백만)", "DB CPA(만원)"], top: 0, right: 0, itemWidth: 12, itemHeight: 8, textStyle: { fontSize: 10.5, color: "#9aa3b2" } },
     xAxis: { type: "category", data: weekly.map((w) => w.label), axisLine: AXIS_LINE, axisTick: { show: false }, axisLabel: LBL },
     yAxis: [
       { type: "value", splitLine: SPLIT, axisLabel: LBL },
       { type: "value", min: 14, max: 18, splitLine: { show: false }, axisLabel: { ...LBL, formatter: "{value}만" } },
     ],
     series: [
-      { name: "소진액(백만)", type: "bar", yAxisIndex: 0, barWidth: "40%", data: weekly.map((w) => +(w.spend / 1e6).toFixed(0)), itemStyle: { borderRadius: [5, 5, 0, 0], color: "#c9a3ff" } },
+      { name: "광고비(백만)", type: "bar", yAxisIndex: 0, barWidth: "40%", data: weekly.map((w) => +(w.spend / 1e6).toFixed(0)), itemStyle: { borderRadius: [5, 5, 0, 0], color: "#c9a3ff" } },
       { name: "DB CPA(만원)", type: "line", yAxisIndex: 1, smooth: true, symbol: "circle", symbolSize: 7, data: weekly.map((w) => +(w.cpa / 1e4).toFixed(1)), lineStyle: { width: 2.4, color: "#ff8c8c" }, itemStyle: { color: "#ff8c8c" } },
     ],
   }), [weekly]);
@@ -112,7 +131,7 @@ export default function TrendPage() {
     const cpaN = dbN ? spN / dbN : 0, cpaP = dbP ? spP / dbP : 0;
     return [
       { lab: "이번주 시험신청 DB", val: fmtN(dbN) + "건", dlt: pctOf(dbN, dbP), acc: "#5b9dff" },
-      { lab: "이번주 소진액", val: fmtEok(spN), dlt: pctOf(spN, spP), acc: "#c9a3ff" },
+      { lab: "이번주 광고비", val: fmtEok(spN), dlt: pctOf(spN, spP), acc: "#c9a3ff" },
       { lab: "이번주 DB CPA", val: fmtMan(cpaN) + "원", dlt: pctOf(cpaN, cpaP), acc: "#ff7b7b" },
       { lab: "이번주 위촉", val: fmtN(apN) + "건", dlt: pctOf(apN, apP), acc: "#42d693" },
     ];
@@ -133,7 +152,7 @@ export default function TrendPage() {
       elapsed, proj, prevFull, dbAch: cur.db / targets.db * 100, projAch: proj / targets.db * 100,
       cards: [
         { lab: "시험신청 DB", val: fmtN(cur.db) + "건", dlt: pctOf(cur.db, prevSame.db), acc: "#5b9dff" },
-        { lab: "소진액", val: fmtEok(cur.spend), dlt: pctOf(cur.spend, prevSame.spend), acc: "#c9a3ff" },
+        { lab: "광고비", val: fmtEok(cur.spend), dlt: pctOf(cur.spend, prevSame.spend), acc: "#c9a3ff" },
         { lab: "DB CPA", val: fmtMan(cur.cpa) + "원", dlt: pctOf(cur.cpa, prevSame.cpa), acc: "#ff7b7b" },
         { lab: "위촉", val: fmtN(cur.appts) + "건", dlt: pctOf(cur.appts, prevSame.appts), acc: "#42d693" },
       ],
@@ -171,7 +190,7 @@ export default function TrendPage() {
             <div style={{ flex: 1, marginTop: 6 }}><EChart option={cpaDaily} height={300} /></div>
           </div>
           <div className="tile" style={{ gridColumn: "span 12", gridRow: "span 3", display: "flex", flexDirection: "column" }}>
-            <span className="tile-label">일별 소진액 (백만원)</span>
+            <span className="tile-label">일별 광고비 (백만원) · 추세선 이번달 vs 지난달</span>
             <div style={{ flex: 1, marginTop: 6 }}><EChart option={spendDaily} height={180} /></div>
           </div>
         </div>
@@ -185,7 +204,7 @@ export default function TrendPage() {
             <div style={{ flex: 1, marginTop: 6 }}><EChart option={weekDbOpt} height={250} /></div>
           </div>
           <div className="tile" style={{ gridColumn: "span 6", gridRow: "span 4", display: "flex", flexDirection: "column" }}>
-            <span className="tile-label">주차별 소진액 & DB CPA</span>
+            <span className="tile-label">주차별 광고비 & DB CPA</span>
             <div style={{ flex: 1, marginTop: 6 }}><EChart option={weekMixOpt} height={250} /></div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import EChart from "@/components/EChart";
 import { useData } from "@/components/DataProvider";
-import { funnelStages, totals, fmtN, signalColor, arrow } from "@/lib/data";
+import { funnelStages, totals, fmtN, signalColor } from "@/lib/data";
 import { TIP } from "@/lib/chart";
 
 export default function FunnelPage() {
@@ -10,13 +10,13 @@ export default function FunnelPage() {
   const stages = useMemo(() => funnelStages(data.channels), [data.channels]);
   const t = useMemo(() => totals(data.channels), [data.channels]);
 
-  const maxLeak = useMemo(() => {
-    let m = { drop: -1 };
-    for (let i = 1; i < stages.length; i++) {
-      const drop = stages[i - 1].value - stages[i].value;
-      if (drop > m.drop) m = { drop, from: stages[i - 1].stage, to: stages[i].stage, prev: stages[i - 1].value, conv: stages[i].conv };
-    }
-    return m;
+  const seg = useMemo(() => {
+    const r = stages.slice(1).map((s, i) => {
+      const prev = stages[i].value;
+      return { seg: `${stages[i].stage} → ${s.stage}`, prev, cur: s.value, conv: s.conv, bm: s.bm, drop: prev - s.value, leak: 1 - s.conv };
+    });
+    let mi = 0; r.forEach((x, i) => { if (x.drop > r[mi].drop) mi = i; });
+    return { list: r, maxIdx: mi };
   }, [stages]);
 
   const funnelOption = useMemo(() => ({
@@ -44,13 +44,6 @@ export default function FunnelPage() {
     };
   }, [stages]);
 
-  const kpis = [
-    { lab: "가입율 (앱설치→가입)", val: stages[2].conv, bm: 0.3 },
-    { lab: "신청율 (가입→신청)", val: stages[3].conv, bm: 0.3 },
-    { lab: "응시율 (신청→응시)", val: stages[4].conv, bm: 0.5 },
-    { lab: "위촉전환율 (DB→위촉)", val: t.appts / t.db, bm: null },
-  ];
-
   return (
     <div className="bento">
       <div className="tile hero" style={{ gridColumn: "span 7", gridRow: "span 6", display: "flex", flexDirection: "column" }}>
@@ -58,22 +51,27 @@ export default function FunnelPage() {
         <div style={{ flex: 1 }}><EChart option={funnelOption} height={340} /></div>
       </div>
 
-      <div style={{ gridColumn: "span 5", gridRow: "span 2", display: "flex", gap: 14 }}>
-        {kpis.map((k) => (
-          <div key={k.lab} className="kpi" style={{ flex: 1 }}>
-            <span className="k-lab">{k.lab}</span>
-            <div className="k-val">{(k.val * 100).toFixed(1)}%</div>
-            {k.bm != null && <div className="k-sub" style={{ color: signalColor(k.val - k.bm) }}>{arrow(k.val - k.bm)} 목표 {(k.bm * 100).toFixed(0)}%</div>}
-          </div>
-        ))}
-      </div>
-
-      <div className="tile cpa" style={{ gridColumn: "span 5", gridRow: "span 4" }}>
-        <span className="tile-label" style={{ color: "#ffb3b3" }}>● 최대 이탈 구간 · 집중 개선</span>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#ffb3b3", marginTop: 14 }}>{maxLeak.from} → {maxLeak.to}</div>
-        <div className="c-val" style={{ marginTop: 6 }}>{((1 - maxLeak.conv) * 100).toFixed(1)}<span className="u"> % 이탈</span></div>
-        <div className="k-sub" style={{ color: "#e0a0a0", marginTop: 8 }}>{fmtN(maxLeak.prev)}명 중 <b style={{ color: "#ff8989" }}>{fmtN(maxLeak.drop)}명</b> 이탈</div>
-        <div className="bar-track"><div className="fill" style={{ width: ((1 - maxLeak.conv) * 100) + "%" }} /></div>
+      <div className="tile" style={{ gridColumn: "span 5", gridRow: "span 6", display: "flex", flexDirection: "column" }}>
+        <span className="tile-label">전체 퍼널 구간 · 유입 · 전환 · 전환율 · 목표 · 이탈 (구간별)</span>
+        <div className="tbl-scroll" style={{ marginTop: 8 }}>
+          <table className="mtable">
+            <thead><tr><th>구간</th><th>유입수</th><th>전환수</th><th>전환율</th><th>목표</th><th>이탈수</th><th>이탈률</th></tr></thead>
+            <tbody>
+              {seg.list.map((r, i) => (
+                <tr key={r.seg} style={i === seg.maxIdx ? { background: "rgba(255,123,123,.10)" } : undefined}>
+                  <td style={{ fontWeight: 700 }}>{r.seg}{i === seg.maxIdx ? " ⚠" : ""}</td>
+                  <td>{fmtN(r.prev)}</td>
+                  <td>{fmtN(r.cur)}</td>
+                  <td style={{ fontWeight: 700, color: r.bm == null ? "var(--ink)" : signalColor(r.conv - r.bm) }}>{(r.conv * 100).toFixed(1)}%</td>
+                  <td style={{ color: "var(--muted)" }}>{r.bm != null ? (r.bm * 100).toFixed(0) + "%" : "—"}</td>
+                  <td style={{ color: "#e0a0a0" }}>{fmtN(r.drop)}</td>
+                  <td style={{ color: "#ff8989", fontWeight: 700 }}>{(r.leak * 100).toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="k-sub" style={{ marginTop: "auto", color: "var(--muted2)" }}>⚠ = 최대 이탈 구간 · 전환율 색 = 목표 대비(상승 빨강 / 하락 파랑)</div>
       </div>
 
       <div className="tile" style={{ gridColumn: "span 7", gridRow: "span 4", display: "flex", flexDirection: "column" }}>
@@ -82,7 +80,7 @@ export default function FunnelPage() {
       </div>
 
       <div className="tile" style={{ gridColumn: "span 5", gridRow: "span 4", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <span className="tile-label">끝단 품질 · 합격 · 활동유지 (목표 대비)</span>
+        <span className="tile-label">합격 · 활동유지 · 목표 달성</span>
         {[
           { lab: "합격", val: t.passes, tg: data.targets.qualification, rate: t.exams ? t.passes / t.exams * 100 : 0, rlab: "합격률(응시→합격)", acc: "#7fd3ff" },
           { lab: "활동유지", val: t.retained, tg: data.targets.retention, rate: t.appts ? t.retained / t.appts * 100 : 0, rlab: "유지율(위촉→유지)", acc: "#42d693" },

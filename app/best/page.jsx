@@ -31,7 +31,7 @@ export default function BestPage() {
     const xSplit = targets.db_cpa;
     return {
       grid: { left: 60, right: 22, top: 16, bottom: 42 },
-      tooltip: { ...TIP, formatter: (p) => `<b>${p.data.name}</b><br/>DB CPA: ${fmtN(p.value[0])}원<br/>DB: ${fmtN(p.value[1])}건<br/>소진: ${fmtEok(p.value[2])}` },
+      tooltip: { ...TIP, formatter: (p) => `<b>${p.data.name}</b><br/>DB CPA: ${fmtN(p.value[0])}원<br/>DB: ${fmtN(p.value[1])}건<br/>광고비: ${fmtEok(p.value[2])}` },
       xAxis: { type: "value", name: "DB CPA →", nameLocation: "middle", nameGap: 28, nameTextStyle: { color: "#9aa3b2", fontSize: 11 }, min: 110000, max: 260000, axisLine: { lineStyle: { color: "#2a3340" } }, axisLabel: { ...LBL, formatter: (v) => (v / 10000) + "만" }, splitLine: SPLIT },
       yAxis: { type: "value", name: "DB 건수 ↑", nameTextStyle: { color: "#9aa3b2", fontSize: 11 }, min: 0, max: yMax, axisLine: { lineStyle: { color: "#2a3340" } }, axisLabel: LBL, splitLine: SPLIT },
       series: [{
@@ -57,7 +57,7 @@ export default function BestPage() {
   return (
     <div className="bento">
       <div className="tile hero" style={{ gridColumn: "span 8", gridRow: "span 6", display: "flex", flexDirection: "column" }}>
-        <div className="h-top"><span className="tile-label">매체 효율 사분면 · DB CPA × DB 건수 (버블=소진액) · 테두리 초록=매체별 목표 이내</span><span className="h-badge">좌상단=증액 · 우하단=축소</span></div>
+        <div className="h-top"><span className="tile-label">매체 효율 사분면 · DB CPA × DB 건수 (버블=광고비) · 테두리 초록=매체별 목표 이내</span><span className="h-badge">좌상단=증액 · 우하단=축소</span></div>
         <div style={{ flex: 1 }}><EChart option={quadOption} height={360} /></div>
       </div>
 
@@ -79,7 +79,7 @@ export default function BestPage() {
       </div>
 
       <div className="tile" style={{ gridColumn: "span 12", gridRow: "span 4", display: "flex", flexDirection: "column" }}>
-        <span className="tile-label">채널별 효율·품질 성과표 · 전환율/품질 지표 (소진액·DB·CPA 등 예산·볼륨은 ‘매체별 성과·예산’ 탭)</span>
+        <span className="tile-label">채널별 효율·품질 성과표 · 전환율/품질 지표 (광고비·DB·CPA 등 예산·볼륨은 ‘매체별 성과·예산’ 탭)</span>
         <div className="tbl-scroll" style={{ marginTop: 8 }}>
           <table className="mtable">
             <thead>

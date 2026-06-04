@@ -42,7 +42,7 @@ export default function ComparePage() {
     };
   }, [daily]);
 
-  // 매출(소진액) 누적 — 저번달(회색 점선) vs 이번달(컬러 실선), 양쪽 끝 금액 표기
+  // 매출(광고비) 누적 — 저번달(회색 점선) vs 이번달(컬러 실선), 양쪽 끝 금액 표기
   const spendOption = useMemo(() => {
     const prevCum = c.prevSpendCum.map((v) => +(v / 1e6).toFixed(1));
     const curCum = c.curSpendCum.map((v) => +(v / 1e6).toFixed(1));
@@ -80,10 +80,10 @@ export default function ComparePage() {
   ];
 
   const cards = [
-    { lab: `이번달 누적 소진액 (${c.elapsed}일)`, val: fmtEok(c.curSpendSum), dlt: c.spendPct, sub: `저번달 동기간 ${fmtEok(c.prevSpendSame)} 대비`, acc: "#7fd3ff" },
+    { lab: `이번달 누적 광고비 (${c.elapsed}일)`, val: fmtEok(c.curSpendSum), dlt: c.spendPct, sub: `저번달 동기간 ${fmtEok(c.prevSpendSame)} 대비`, acc: "#7fd3ff" },
     { lab: `이번달 누적 시험신청 DB (${c.elapsed}일)`, val: fmtN(c.curDBSum) + "건", dlt: c.dbPct, sub: `저번달 동기간 ${fmtN(c.prevDBSame)}건 대비`, acc: "#5b9dff" },
-    { lab: `저번달(${c.prevLabel}) 확정 소진액`, val: fmtEok(c.prevSpendFinal), sub: "월 마감 기준", acc: "#7a8494" },
-    { lab: `저번달(${c.prevLabel}) 확정 시험신청 DB`, val: fmtN(c.prevDBFinal) + "건", sub: "월 마감 기준", acc: "#7a8494" },
+    { lab: `저번달(${c.prevLabel}) 광고비`, val: fmtEok(c.prevSpendFinal), sub: "월 마감 기준", acc: "#7a8494" },
+    { lab: `저번달(${c.prevLabel}) 시험신청 DB`, val: fmtN(c.prevDBFinal) + "건", sub: "월 마감 기준", acc: "#7a8494" },
   ];
 
   return (
@@ -103,7 +103,7 @@ export default function ComparePage() {
       </div>
 
       <div className="tile" style={{ gridColumn: "span 6", gridRow: "span 5", display: "flex", flexDirection: "column" }}>
-        <span className="tile-label">월 매출(소진액) 누적 추이 · 저번달 vs 이번달</span>
+        <span className="tile-label">월 매출(광고비) 누적 추이 · 저번달 vs 이번달</span>
         <div style={{ flex: 1, marginTop: 6 }}><EChart option={spendOption} height={320} /></div>
       </div>
 
@@ -133,8 +133,8 @@ export default function ComparePage() {
 
       <div className="tile" style={{ gridColumn: "span 12", gridRow: "span 1", display: "flex", alignItems: "center" }}>
         <span className="k-sub" style={{ margin: 0 }}>
-          ※ 매출(revenue) 항목이 없어 <b style={{ color: "#7fd3ff" }}>‘매출=소진액(미디어 집행액)’</b> 기준입니다.
-          저번달 일별 데이터(소진액·DB·앱설치·회원가입·위촉)는 모두 설정값(<b>PREV_DAILY_*</b>)이며, 실제 지난달 데이터로 교체 가능합니다.
+          ※ 매출(revenue) 항목이 없어 <b style={{ color: "#7fd3ff" }}>‘매출=광고비(미디어 집행액)’</b> 기준입니다.
+          저번달 일별 데이터(광고비·DB·앱설치·회원가입·위촉)는 모두 설정값(<b>PREV_DAILY_*</b>)이며, 실제 지난달 데이터로 교체 가능합니다.
         </span>
       </div>
     </div>

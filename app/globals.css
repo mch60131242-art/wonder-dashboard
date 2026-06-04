@@ -61,6 +61,18 @@ a { text-decoration: none; }
 /* 월별 카드 (저번달/이번달/다음달) */
 .month { display: flex; flex-direction: column; }
 .month.focus { box-shadow: inset 0 0 0 1.5px rgba(91,157,255,.45); }
+/* 이번달(가운데 게이지) 카드 글자 키우기 */
+.month.focus .h-foot .big { font-size: 36px; }
+.month.focus .h-foot .meta { font-size: 13px; }
+.month.focus .mline { font-size: 13.5px; }
+.month.focus .mline .mlab { font-size: 13px; }
+.month.focus .mline .mval { font-size: 14px; }
+.month.focus .mline .msub { font-size: 11.5px; }
+.month.focus .subrow { font-size: 12.5px; }
+.month.focus .subrow .slab { font-size: 12.5px; }
+.month.focus .subrow .sval { font-size: 13px; }
+.month.focus .subkpi { gap: 5px; padding-top: 8px; }
+.subcap { font-size: 10.5px; color: var(--muted2); font-weight: 700; margin-bottom: 5px; }
 .card-detail { margin-top: auto; }
 .mlines { padding-top: 11px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
 .mline { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; }
@@ -81,6 +93,23 @@ a { text-decoration: none; }
 .plan .plan-target .unit { font-size: 15px; color: var(--muted); font-weight: 600; margin-left: 3px; }
 .plan .plan-mom { font-size: 13px; font-weight: 700; margin-top: 6px; }
 .plan .h-badge.plan-badge { color: var(--violet); background: rgba(139,108,255,.12); border-color: rgba(139,108,255,.3); }
+/* 단계별 스파크라인 리스트 */
+.spark-list { flex: 1; margin-top: 8px; display: flex; flex-direction: column; }
+.spark-row { display: grid; grid-template-columns: 72px 60px 52px 1fr; align-items: center; gap: 8px; flex: 1; border-bottom: 1px solid var(--line); min-height: 0; }
+.spark-row:last-child { border-bottom: none; }
+.spark-lab { font-size: 12px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+.spark-val { font-size: 13.5px; font-weight: 800; text-align: right; }
+.spark-avg { font-size: 10.5px; color: var(--muted2); font-weight: 600; text-align: right; white-space: nowrap; }
+.spark-chart { height: 100%; min-width: 0; display: flex; align-items: center; }
+.spark-chart > div { width: 100%; }
+
+/* 이번달 실적표 (퍼널 항목) */
+.ftable { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 12px; }
+.ftable th, .ftable td { padding: 9px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.ftable th { color: var(--muted); font-weight: 600; font-size: 11.5px; }
+.ftable th:first-child, .ftable td:first-child { text-align: left; }
+.ftable td:first-child { font-weight: 700; }
+.ftable td.muted { color: var(--muted2); }
 
 /* 단계별 소형 멀티(월별 추이 비교) */
 .mini-grid { flex: 1; margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; }
@@ -102,7 +131,7 @@ a { text-decoration: none; }
 .down { color: var(--red); }
 .neutral { color: #8a93a3; }
 
-/* 소진액/CPA 강조 */
+/* 광고비/CPA 강조 */
 .spend { background: linear-gradient(140deg, #16202b, #13202c); border: none; }
 .cpa { background: linear-gradient(140deg, #2a1518, #1d1216); border: none; display: flex; flex-direction: column; justify-content: center; }
 .cpa .c-val { font-size: 38px; font-weight: 800; letter-spacing: -1.5px; color: #ff8989; }
