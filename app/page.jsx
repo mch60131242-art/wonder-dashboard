@@ -2,10 +2,10 @@
 import { useMemo } from "react";
 import EChart from "@/components/EChart";
 import { useData } from "@/components/DataProvider";
-import { totals, monthsSummary, signalColor, arrow, fmtN, fmtMan, fmtEok, SUB_TARGETS, PREV_SUB, prevSamePeriod } from "@/lib/data";
+import { totals, monthsSummary, signalColor, arrow, fmtN, fmtMan, fmtEok, SUB_TARGETS, prevSamePeriod, prevMonthTotal, STAGE_TARGET_TOTAL } from "@/lib/data";
 import { TIP } from "@/lib/chart";
 
-// 단계별 일별 추이 (퍼널 7단계 스파크라인)
+// 퍼널 7단계
 const STAGE_DEFS = [
   { key: "clicks", lab: "유입(클릭)", color: "#5b9dff" },
   { key: "installs", lab: "앱설치", color: "#3b6fd4" },
@@ -15,30 +15,6 @@ const STAGE_DEFS = [
   { key: "passes", lab: "합격", color: "#ff9d5c" },
   { key: "appts", lab: "위촉", color: "#42d693" },
 ];
-
-// 서브 KPI(앱설치/회원가입/위촉) 상세 — plan이면 목표값만 표기
-const SUB_DEFS = [{ key: "installs", lab: "앱설치" }, { key: "signups", lab: "회원가입" }, { key: "appts", lab: "위촉" }];
-function SubKpi({ vals, plan }) {
-  return (
-    <div className="subkpi">
-      {SUB_DEFS.map((d) => {
-        const v = vals[d.key], tg = SUB_TARGETS[d.key];
-        return (
-          <div className="subrow" key={d.key}>
-            <span className="slab">{d.lab}</span>
-            {plan ? (
-              <span className="sval">{fmtN(v)}<span className="starg"> 목표</span></span>
-            ) : (
-              <span className="sval">{fmtN(v)}<span className="starg"> / {fmtN(tg)}</span>
-                <span className="sach" style={{ color: v >= tg ? "var(--amber)" : "var(--muted)" }}> {Math.round(v / tg * 100)}%</span>
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 // 달성률 게이지 옵션 (저번달/이번달 공용)
 const makeGauge = (value) => ({
@@ -111,12 +87,19 @@ export default function KpiPage() {
                 {arrow(m.prev.final - m.prev.target)} {fmtN(Math.abs(m.prev.final - m.prev.target))}건
               </span>
             </div>
-            <div className="mline">
-              <span className="mlab">상태</span>
-              <span className="mval" style={{ color: "var(--muted)" }}>마감 완료</span>
-            </div>
           </div>
-          <SubKpi vals={PREV_SUB} />
+          <div className="subkpi">
+            <div className="subcap">단계별 실적 · <span style={{ color: "var(--muted)" }}>목표 대비</span></div>
+            {STAGE_DEFS.map((s) => {
+              const cur = prevMonthTotal(s.key), tg = s.key === "db" ? m.prev.target : STAGE_TARGET_TOTAL[s.key], pct = tg ? (cur / tg - 1) * 100 : 0;
+              return (
+                <div className="subrow" key={s.key}>
+                  <span className="slab">{s.lab}</span>
+                  <span className="sval">{fmtN(cur)}<span style={{ color: signalColor(pct), fontSize: 11, fontWeight: 800, marginLeft: 6 }}>{arrow(pct)}{Math.abs(pct).toFixed(1)}%</span></span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
