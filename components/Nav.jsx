@@ -5,10 +5,11 @@ import { useData } from "./DataProvider";
 
 const TABS = [
   { href: "/", no: "①", name: "핵심 KPI" },
-  { href: "/funnel", no: "②", name: "퍼널 흐름" },
-  { href: "/media", no: "③", name: "매체별 성과·예산" },
-  { href: "/best", no: "④", name: "우수 채널" },
-  { href: "/trend", no: "⑤", name: "추이" },
+  { href: "/trend", no: "②", name: "추이" },
+  { href: "/compare", no: "③", name: "월별 추이 비교" },
+  { href: "/funnel", no: "④", name: "퍼널 흐름" },
+  { href: "/media", no: "⑤", name: "매체별 성과·예산" },
+  { href: "/best", no: "⑥", name: "채널" },
 ];
 
 export default function Nav() {
@@ -19,7 +20,6 @@ export default function Nav() {
     <div className="topbar">
       <div className="brand">
         <span className="logo">WONDER</span>
-        <span className="sub">보험설계사 위촉 · 리드젠 마케팅 대시보드</span>
       </div>
 
       <nav className="nav">

@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import EChart from "@/components/EChart";
 import { useData } from "@/components/DataProvider";
-import { funnelStages, totals, fmtN } from "@/lib/data";
+import { funnelStages, totals, fmtN, signalColor, arrow } from "@/lib/data";
 import { TIP } from "@/lib/chart";
 
 export default function FunnelPage() {
@@ -63,7 +63,7 @@ export default function FunnelPage() {
           <div key={k.lab} className="kpi" style={{ flex: 1 }}>
             <span className="k-lab">{k.lab}</span>
             <div className="k-val">{(k.val * 100).toFixed(1)}%</div>
-            {k.bm != null && <div className={"k-sub " + (k.val >= k.bm ? "up" : "down")}>{k.val >= k.bm ? "▲" : "▼"} 목표 {(k.bm * 100).toFixed(0)}%</div>}
+            {k.bm != null && <div className="k-sub" style={{ color: signalColor(k.val - k.bm) }}>{arrow(k.val - k.bm)} 목표 {(k.bm * 100).toFixed(0)}%</div>}
           </div>
         ))}
       </div>
@@ -76,9 +76,26 @@ export default function FunnelPage() {
         <div className="bar-track"><div className="fill" style={{ width: ((1 - maxLeak.conv) * 100) + "%" }} /></div>
       </div>
 
-      <div className="tile" style={{ gridColumn: "span 12", gridRow: "span 4", display: "flex", flexDirection: "column" }}>
+      <div className="tile" style={{ gridColumn: "span 7", gridRow: "span 4", display: "flex", flexDirection: "column" }}>
         <span className="tile-label">단계별 전환율 vs 목표</span>
         <div style={{ flex: 1, marginTop: 6 }}><EChart option={convOption} height={230} /></div>
+      </div>
+
+      <div className="tile" style={{ gridColumn: "span 5", gridRow: "span 4", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <span className="tile-label">끝단 품질 · 합격 · 활동유지 (목표 대비)</span>
+        {[
+          { lab: "합격", val: t.passes, tg: data.targets.qualification, rate: t.exams ? t.passes / t.exams * 100 : 0, rlab: "합격률(응시→합격)", acc: "#7fd3ff" },
+          { lab: "활동유지", val: t.retained, tg: data.targets.retention, rate: t.appts ? t.retained / t.appts * 100 : 0, rlab: "유지율(위촉→유지)", acc: "#42d693" },
+        ].map((q) => (
+          <div key={q.lab} style={{ marginTop: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>{q.lab} <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 600 }}>· {q.rlab} {q.rate.toFixed(1)}%</span></span>
+              <span style={{ fontSize: 14, fontWeight: 800 }}>{fmtN(q.val)} <span style={{ color: "var(--muted2)", fontSize: 11, fontWeight: 600 }}>/ 목표 {fmtN(q.tg)}</span></span>
+            </div>
+            <div className="k-bar" style={{ marginTop: 7 }}><i style={{ width: Math.min(q.val / q.tg * 100, 100) + "%", background: q.acc }} /></div>
+            <div className="k-sub" style={{ marginTop: 4 }}>달성률 {(q.val / q.tg * 100).toFixed(1)}%</div>
+          </div>
+        ))}
       </div>
     </div>
   );

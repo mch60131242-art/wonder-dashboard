@@ -2,64 +2,146 @@
 import { useMemo } from "react";
 import EChart from "@/components/EChart";
 import { useData } from "@/components/DataProvider";
-import { totals, fmtN, fmtMan, fmtEok, colorOf } from "@/lib/data";
-import { TIP, AXIS_LINE, SPLIT, LBL } from "@/lib/chart";
+import { totals, monthsSummary, signalColor, arrow, fmtN, fmtMan, fmtEok, SUB_TARGETS, PREV_SUB, NEXT_SUB } from "@/lib/data";
+
+// 서브 KPI(앱설치/회원가입/위촉) 상세 — plan이면 목표값만 표기
+const SUB_DEFS = [{ key: "installs", lab: "앱설치" }, { key: "signups", lab: "회원가입" }, { key: "appts", lab: "위촉" }];
+function SubKpi({ vals, plan }) {
+  return (
+    <div className="subkpi">
+      {SUB_DEFS.map((d) => {
+        const v = vals[d.key], tg = SUB_TARGETS[d.key];
+        return (
+          <div className="subrow" key={d.key}>
+            <span className="slab">{d.lab}</span>
+            {plan ? (
+              <span className="sval">{fmtN(v)}<span className="starg"> 목표</span></span>
+            ) : (
+              <span className="sval">{fmtN(v)}<span className="starg"> / {fmtN(tg)}</span>
+                <span className="sach" style={{ color: v >= tg ? "var(--amber)" : "var(--muted)" }}> {Math.round(v / tg * 100)}%</span>
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// 달성률 게이지 옵션 (저번달/이번달 공용)
+const makeGauge = (value) => ({
+  series: [{
+    type: "gauge", startAngle: 210, endAngle: -30, radius: "94%", center: ["50%", "62%"], min: 0, max: 1,
+    progress: { show: true, width: 13, roundCap: true, itemStyle: { color: { type: "linear", x: 0, y: 0, x2: 1, y2: 0, colorStops: [{ offset: 0, color: "#3b6fd4" }, { offset: 1, color: "#ff9d5c" }] } } },
+    pointer: { show: false }, axisLine: { lineStyle: { width: 13, color: [[1, "#232b38"]] } },
+    axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, anchor: { show: false },
+    detail: { formatter: (v) => (v * 100).toFixed(1) + "%", color: "#ffd27a", fontSize: 26, fontWeight: 800, offsetCenter: [0, "12%"] },
+    title: { show: false }, data: [{ value }],
+  }],
+});
 
 export default function KpiPage() {
   const { data } = useData();
   const { channels, daily, targets } = data;
   const t = useMemo(() => totals(channels), [channels]);
-  const dbAch = t.db / targets.db;
+  const m = useMemo(() => monthsSummary(daily, targets), [daily, targets]);
   const cpaOver = t.db_cpa > targets.db_cpa;
 
-  const gaugeOption = useMemo(() => ({
-    series: [{
-      type: "gauge", startAngle: 210, endAngle: -30, radius: "96%", center: ["50%", "60%"], min: 0, max: 1,
-      progress: { show: true, width: 16, roundCap: true, itemStyle: { color: { type: "linear", x: 0, y: 0, x2: 1, y2: 0, colorStops: [{ offset: 0, color: "#3b6fd4" }, { offset: 1, color: "#ff9d5c" }] } } },
-      pointer: { show: false }, axisLine: { lineStyle: { width: 16, color: [[1, "#232b38"]] } },
-      axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, anchor: { show: false },
-      detail: { formatter: (v) => (v * 100).toFixed(1) + "%", color: "#ffd27a", fontSize: 30, fontWeight: 800, offsetCenter: [0, "8%"] },
-      title: { show: false }, data: [{ value: dbAch }],
-    }],
-  }), [dbAch]);
+  const prevGauge = useMemo(() => makeGauge(m.prev.ach), [m]);
+  const curGauge = useMemo(() => makeGauge(m.cur.ach), [m]);
 
-  const trendOption = useMemo(() => {
-    const days = daily.map((d) => d.date.slice(5));
-    const pace = Math.round(targets.db / (daily.length || 1));
-    return {
-      grid: { left: 34, right: 14, top: 14, bottom: 24 }, tooltip: { trigger: "axis", ...TIP },
-      xAxis: { type: "category", data: days, axisLine: AXIS_LINE, axisTick: { show: false }, axisLabel: { ...LBL, interval: 2 } },
-      yAxis: { type: "value", min: 50, max: 95, splitLine: SPLIT, axisLabel: LBL },
-      series: [{
-        type: "bar", data: daily.map((d) => d.db), barWidth: "55%",
-        itemStyle: { borderRadius: [4, 4, 0, 0], color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: "#5b9dff" }, { offset: 1, color: "rgba(91,157,255,.4)" }] } },
-        markLine: { silent: true, symbol: "none", lineStyle: { color: "#ffd27a", type: "dashed", width: 1.5 }, label: { show: true, position: "insideEndTop", color: "#ffd27a", fontSize: 10, formatter: "목표 페이스 " + pace }, data: [{ yAxis: pace }] },
-      }],
-    };
-  }, [daily, targets]);
-
-  const mediaOption = useMemo(() => {
-    const sorted = [...channels].sort((a, b) => a.db - b.db);
-    return {
-      grid: { left: 6, right: 42, top: 6, bottom: 6, containLabel: true }, tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, ...TIP },
-      xAxis: { type: "value", show: false, max: Math.max(...channels.map((c) => c.db)) * 1.18 },
-      yAxis: { type: "category", data: sorted.map((c) => c.channel), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: "#cdd5e2", fontSize: 11.5, fontWeight: 600 } },
-      series: [{ type: "bar", data: sorted.map((c, i) => ({ value: c.db, itemStyle: { color: colorOf(c.channel, i), borderRadius: [0, 7, 7, 0] } })), barWidth: "62%", label: { show: true, position: "right", color: "#aeb6c4", fontSize: 11, fontWeight: 700, formatter: "{c}" } }],
-    };
-  }, [channels]);
+  // 예산 집행률 (이번달)
+  const budget = targets.budget || 0;
+  const budgetPct = budget ? t.spend / budget : 0;
+  const projSpend = m.cur.elapsed ? Math.round(t.spend / m.cur.elapsed * m.cur.days) : t.spend;
+  const projBudgetPct = budget ? projSpend / budget : 0;
 
   return (
     <div className="bento">
-      {/* 히어로: DB 달성률 게이지 */}
-      <div className="tile hero" style={{ gridColumn: "span 4", gridRow: "span 4" }}>
+      {/* 저번달 — 결과(확정) */}
+      <div className="tile hero month" style={{ gridColumn: "span 4", gridRow: "span 6" }}>
         <div className="h-top">
-          <span className="tile-label">시험신청 DB · 월목표 달성률</span>
-          <span className="h-badge">목표 {fmtN(targets.db)}</span>
+          <span className="tile-label">저번달 · {m.prev.label} 결과</span>
+          <span className="h-badge">목표 {fmtN(m.prev.target)}</span>
         </div>
-        <EChart option={gaugeOption} height={180} />
+        <EChart option={prevGauge} height={150} />
         <div className="h-foot">
-          <span className="big">{fmtN(t.db)}</span><span className="unit">건</span>
-          <div className="meta">목표 {fmtN(targets.db)}건 · 달성률 {(dbAch * 100).toFixed(1)}%</div>
+          <span className="big">{fmtN(m.prev.final)}</span><span className="unit">건</span>
+          <div className="meta">달성률 {(m.prev.ach * 100).toFixed(1)}% · 확정</div>
+        </div>
+        <div className="card-detail">
+          <div className="mlines">
+            <div className="mline">
+              <span className="mlab">목표 대비</span>
+              <span className="mval" style={{ color: signalColor(m.prev.final - m.prev.target) }}>
+                {arrow(m.prev.final - m.prev.target)} {fmtN(Math.abs(m.prev.final - m.prev.target))}건
+              </span>
+            </div>
+            <div className="mline">
+              <span className="mlab">상태</span>
+              <span className="mval" style={{ color: "var(--muted)" }}>마감 완료</span>
+            </div>
+          </div>
+          <SubKpi vals={PREV_SUB} />
+        </div>
+      </div>
+
+      {/* 이번달 — 진행 + 예상 착지 + 동기간 비교 */}
+      <div className="tile hero month focus" style={{ gridColumn: "span 4", gridRow: "span 6" }}>
+        <div className="h-top">
+          <span className="tile-label">이번달 · {m.cur.label} 진행</span>
+          <span className="h-badge">목표 {fmtN(m.cur.target)}</span>
+        </div>
+        <EChart option={curGauge} height={150} />
+        <div className="h-foot">
+          <span className="big">{fmtN(m.cur.db)}</span><span className="unit">건</span>
+          <div className="meta">{m.cur.elapsed}/{m.cur.days}일 · 달성률 {(m.cur.ach * 100).toFixed(1)}%</div>
+        </div>
+        <div className="card-detail">
+          <div className="mlines">
+            <div className="mline">
+              <span className="mlab">월말 예상 달성</span>
+              <span className="mval" style={{ color: m.cur.projAch >= 1 ? "var(--amber)" : "var(--muted)" }}>
+                {fmtN(m.cur.proj)}건 · {(m.cur.projAch * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div className="mline">
+              <span className="mlab">저번달 동기간 대비</span>
+              <span className="mval" style={{ color: signalColor(m.cur.samePct) }}>
+                {arrow(m.cur.samePct)} {Math.abs(m.cur.samePct).toFixed(1)}%
+                <span className="msub"> ({fmtN(m.cur.samePrev)}→{fmtN(m.cur.db)})</span>
+              </span>
+            </div>
+          </div>
+          <SubKpi vals={{ installs: t.installs, signups: t.signups, appts: t.appts }} />
+        </div>
+      </div>
+
+      {/* 다음달 — 계획·전망 (게이지 대신 목표/페이스) */}
+      <div className="tile hero month plan" style={{ gridColumn: "span 4", gridRow: "span 6" }}>
+        <div className="h-top">
+          <span className="tile-label">다음달 · {m.next.label} 계획</span>
+          <span className="h-badge plan-badge">전망</span>
+        </div>
+        <div className="plan-main">
+          <span className="plan-lab">목표</span>
+          <div className="plan-target"><span className="big">{fmtN(m.next.target)}</span><span className="unit">건</span></div>
+          <div className="plan-mom" style={{ color: signalColor(m.next.targetMoM) }}>
+            전월 목표 대비 {arrow(m.next.targetMoM)} {Math.abs(m.next.targetMoM).toFixed(1)}%
+          </div>
+        </div>
+        <div className="card-detail">
+          <div className="mlines">
+            <div className="mline">
+              <span className="mlab">필요 일일 페이스</span>
+              <span className="mval">{fmtN(m.next.pace)}건/일</span>
+            </div>
+            <div className="mline">
+              <span className="mlab">추세 가정 예상</span>
+              <span className="mval" style={{ color: "var(--muted)" }}>{fmtN(m.next.projDB)}건 · {(m.next.projAch * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+          <SubKpi vals={NEXT_SUB} plan />
         </div>
       </div>
 
@@ -68,6 +150,17 @@ export default function KpiPage() {
         <span className="tile-label">소진액 · 이번달 누적</span>
         <div className="k-val" style={{ color: "#7fd3ff" }}>{fmtN(t.spend)}<span className="u">원</span></div>
         <div className="k-sub">{fmtEok(t.spend)} · 일평균 {fmtMan(t.spend / (daily.length || 1))}원</div>
+      </div>
+
+      {/* 예산 집행률 */}
+      <div className="tile" style={{ gridColumn: "span 4", gridRow: "span 2", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <span className="tile-label">예산 집행률 · 이번달</span>
+        <div className="k-val" style={{ fontSize: 24 }}>{(budgetPct * 100).toFixed(1)}<span className="u">%</span></div>
+        <div className="k-bar"><i style={{ width: Math.min(budgetPct * 100, 100) + "%", background: "linear-gradient(90deg,#5b9dff,#7fd3ff)" }} /></div>
+        <div className="k-sub" style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>{fmtEok(t.spend)} / {fmtEok(budget)}</span>
+          <span style={{ color: "var(--muted)" }}>예상 월말 {(projBudgetPct * 100).toFixed(0)}%</span>
+        </div>
       </div>
 
       {/* CPA */}
@@ -82,37 +175,6 @@ export default function KpiPage() {
           <span>목표 {fmtN(targets.db_cpa)}원</span>
           <span style={{ color: cpaOver ? "#ff8989" : "#42d693", fontWeight: 700 }}>{cpaOver ? "+" : ""}{((t.db_cpa / targets.db_cpa - 1) * 100).toFixed(1)}%</span>
         </div>
-      </div>
-
-      {/* 미니 KPI 3종 */}
-      <div style={{ gridColumn: "span 4", gridRow: "span 4", display: "flex", flexDirection: "column", gap: 14 }}>
-        <div className="kpi" style={{ flex: 1 }}>
-          <span className="k-lab">앱설치</span>
-          <div className="k-val">{fmtN(t.installs)}<span className="u">건</span></div>
-          <div className="k-sub">목표 {fmtN(targets.app_install)} · 달성 {(t.installs / targets.app_install * 100).toFixed(1)}%</div>
-        </div>
-        <div className="kpi" style={{ flex: 1 }}>
-          <span className="k-lab">회원가입</span>
-          <div className="k-val">{fmtN(t.signups)}<span className="u">건</span></div>
-          <div className="k-sub">앱설치 대비 {(t.signups / t.installs * 100).toFixed(1)}%</div>
-        </div>
-        <div className="kpi" style={{ flex: 1 }}>
-          <span className="k-lab">위촉</span>
-          <div className="k-val">{fmtN(t.appts)}<span className="u">건</span></div>
-          <div className="k-sub">DB→위촉 {(t.appts / t.db * 100).toFixed(1)}%</div>
-        </div>
-      </div>
-
-      {/* 추이 */}
-      <div className="tile" style={{ gridColumn: "span 8", gridRow: "span 4", display: "flex", flexDirection: "column" }}>
-        <span className="tile-label">일별 시험신청 DB 추이</span>
-        <div style={{ flex: 1, marginTop: 6 }}><EChart option={trendOption} height={300} /></div>
-      </div>
-
-      {/* 매체별 DB */}
-      <div className="tile" style={{ gridColumn: "span 4", gridRow: "span 4", display: "flex", flexDirection: "column" }}>
-        <span className="tile-label">매체별 시험신청 DB (내림차순)</span>
-        <div style={{ flex: 1, marginTop: 6 }}><EChart option={mediaOption} height={300} /></div>
       </div>
     </div>
   );

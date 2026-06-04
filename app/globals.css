@@ -38,6 +38,12 @@ a { text-decoration: none; }
 .src-ok { color: var(--green); font-weight: 600; }
 .src-err { color: var(--red); font-weight: 600; }
 
+/* ===== 서브탭(세그먼트 컨트롤) ===== */
+.seg { display: inline-flex; gap: 4px; background: var(--tile); border: 1px solid var(--line); border-radius: 13px; padding: 4px; margin-bottom: 16px; }
+.seg button { background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 700; padding: 7px 20px; border-radius: 9px; cursor: pointer; transition: .15s; font-family: inherit; }
+.seg button:hover { color: #cdd5e2; }
+.seg button.on { background: linear-gradient(120deg, #3b6fd4, #6a52d6); color: #fff; box-shadow: 0 2px 10px rgba(90,120,255,.3); }
+
 /* ===== 벤토 그리드 ===== */
 .bento { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 88px; gap: 14px; }
 .tile { background: var(--tile); border: none; border-radius: 22px; padding: 18px 20px; position: relative; overflow: hidden; }
@@ -51,6 +57,37 @@ a { text-decoration: none; }
 .h-foot .big { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
 .h-foot .unit { font-size: 15px; color: var(--muted); font-weight: 600; margin-left: 3px; }
 .h-foot .meta { font-size: 12px; color: #8a93a3; margin-top: 3px; }
+
+/* 월별 카드 (저번달/이번달/다음달) */
+.month { display: flex; flex-direction: column; }
+.month.focus { box-shadow: inset 0 0 0 1.5px rgba(91,157,255,.45); }
+.card-detail { margin-top: auto; }
+.mlines { padding-top: 11px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.mline { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; }
+.mline .mlab { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.mline .mval { font-weight: 700; font-size: 12.5px; text-align: right; }
+.mline .msub { color: var(--muted2); font-weight: 600; font-size: 10.5px; }
+/* 서브 KPI (앱설치/회원가입/위촉) */
+.subkpi { margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 7px; }
+.subrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; }
+.subrow .slab { color: var(--muted); font-weight: 600; }
+.subrow .sval { font-weight: 700; font-size: 12.5px; }
+.subrow .starg { color: var(--muted2); font-weight: 600; font-size: 11px; }
+.subrow .sach { font-weight: 800; font-size: 11.5px; margin-left: 3px; }
+/* 다음달 계획 카드 */
+.plan .plan-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 120px; }
+.plan .plan-lab { font-size: 12px; color: var(--muted); font-weight: 600; }
+.plan .plan-target .big { font-size: 44px; font-weight: 800; letter-spacing: -1.5px; }
+.plan .plan-target .unit { font-size: 15px; color: var(--muted); font-weight: 600; margin-left: 3px; }
+.plan .plan-mom { font-size: 13px; font-weight: 700; margin-top: 6px; }
+.plan .h-badge.plan-badge { color: var(--violet); background: rgba(139,108,255,.12); border-color: rgba(139,108,255,.3); }
+
+/* 단계별 소형 멀티(월별 추이 비교) */
+.mini-grid { flex: 1; margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; }
+.mini { background: #11161e; border-radius: 12px; padding: 8px 10px 4px; display: flex; flex-direction: column; }
+.mini-h { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.mini-t { font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.mini-v { font-size: 13px; font-weight: 800; white-space: nowrap; }
 
 /* KPI */
 .kpi { background: var(--tile); border: none; border-radius: 18px; padding: 15px 16px; display: flex; flex-direction: column; justify-content: center; position: relative; }
@@ -84,12 +121,14 @@ a { text-decoration: none; }
 .tbl-scroll { max-height: 420px; overflow: auto; }
 
 /* 랭킹 */
-.rk { display: flex; align-items: center; gap: 9px; font-size: 12.5px; padding: 9px 11px; border-radius: 12px; margin-bottom: 9px; }
-.rk.best { background: rgba(66,214,147,.1); border: 1px solid rgba(66,214,147,.3); }
-.rk.worst { background: rgba(255,123,123,.1); border: 1px solid rgba(255,123,123,.3); }
-.rk .bj { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 7px; }
-.rk.best .bj { color: var(--green); background: rgba(66,214,147,.16); }
-.rk.worst .bj { color: var(--red); background: rgba(255,123,123,.16); }
+.rk { display: flex; align-items: center; gap: 9px; font-size: 12.5px; padding: 8px 11px; border-radius: 12px; margin-bottom: 7px; }
+/* 증감 색 규칙(피드백3) 강제: ▲ 상승/우수 = 빨강, ▼ 하락/하위 = 파랑 */
+.rk.best { background: rgba(255,123,123,.1); border: 1px solid rgba(255,123,123,.3); }
+.rk.worst { background: rgba(91,157,255,.1); border: 1px solid rgba(91,157,255,.3); }
+.rk .bj { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 7px; white-space: nowrap; }
+.rk.best .bj { color: var(--red); background: rgba(255,123,123,.16); }
+.rk.worst .bj { color: var(--blue); background: rgba(91,157,255,.16); }
+.rk-sub { font-size: 11px; color: var(--muted2); font-weight: 700; margin: 9px 0 5px; }
 .rk .nm { flex: 1; font-weight: 700; }
 .rk .vv { color: var(--muted); font-weight: 700; }
 
